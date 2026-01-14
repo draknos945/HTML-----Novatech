@@ -1,4 +1,3 @@
-
 function showSection(sectionId, el) {
   document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
   document.getElementById(sectionId).classList.add('active');
@@ -9,16 +8,54 @@ function showSection(sectionId, el) {
   if (el) el.classList.add('active-nav');
 }
 
-
 let products = JSON.parse(localStorage.getItem("products")) || [];
+let categories = JSON.parse(localStorage.getItem("categories")) || [];
 let editIndex = null;
 
 const productForm = document.getElementById("productForm");
 const productList = document.getElementById("productList");
 const searchInput = document.getElementById("searchInput");
+const categoryForm = document.getElementById("categoryForm");
+const categoryList = document.getElementById("categoryList");
 
 function saveProducts() {
   localStorage.setItem("products", JSON.stringify(products));
+}
+
+function saveCategories() {
+  localStorage.setItem("categories", JSON.stringify(categories));
+}
+
+
+async function seedFromAPI() {
+  if (products.length > 0) return;
+
+  try {
+    const res = await fetch("https://fakestoreapi.com/products");
+    const data = await res.json();
+
+    const generatedCategories = new Set();
+
+    products = data.map(p => {
+      const stock = Math.floor(Math.random() * 20) + 1;
+      const cat = p.category.charAt(0).toUpperCase() + p.category.slice(1);
+      generatedCategories.add(cat);
+
+      return {
+        name: p.title,
+        price: p.price,
+        stock: stock,
+        category: cat
+      };
+    });
+
+    categories = [...generatedCategories];
+
+    saveProducts();
+    saveCategories();
+  } catch (err) {
+    console.error("API Error:", err);
+  }
 }
 
 function renderProducts(filtered = products) {
@@ -41,12 +78,8 @@ function renderProducts(filtered = products) {
       </div>
 
       <div class="actions">
-        <button class="action-btn" onclick="editProduct(${index})">
-          ✎
-        </button>
-        <button class="action-btn action-delete" onclick="confirmDelete(${index})">
-          ⌫
-        </button>
+        <button class="action-btn" onclick="editProduct(${index})">✎</button>
+        <button class="action-btn action-delete" onclick="confirmDelete(${index})">⌫</button>
       </div>
     `;
 
@@ -99,7 +132,6 @@ productForm.addEventListener("submit", function(e) {
   productForm.reset();
 });
 
-
 searchInput.addEventListener("input", function() {
   const value = this.value.toLowerCase();
   const filtered = products.filter(p =>
@@ -107,7 +139,6 @@ searchInput.addEventListener("input", function() {
   );
   renderProducts(filtered);
 });
-
 
 let nameAsc = true;
 let priceAsc = true;
@@ -136,16 +167,6 @@ function sortByPrice(btn) {
 
   priceAsc = !priceAsc;
   renderProducts();
-}
-
-
-let categories = JSON.parse(localStorage.getItem("categories")) || [];
-
-const categoryForm = document.getElementById("categoryForm");
-const categoryList = document.getElementById("categoryList");
-
-function saveCategories() {
-  localStorage.setItem("categories", JSON.stringify(categories));
 }
 
 function renderCategories() {
@@ -199,7 +220,6 @@ categoryForm.addEventListener("submit", function(e) {
   categoryForm.reset();
 });
 
-
 let stockChart = null;
 
 function updateDashboard() {
@@ -213,7 +233,6 @@ function updateDashboard() {
 
   updateChart();
 }
-
 
 function updateChart() {
   const canvas = document.getElementById("stockChart");
@@ -262,7 +281,6 @@ function updateChart() {
   });
 }
 
-
 function filterByCategory() {
   const selected = document.getElementById("filterCategory").value;
 
@@ -274,8 +292,10 @@ function filterByCategory() {
   }
 }
 
-
-renderProducts();
-renderCategories();
-updateDashboard();
-updateChart();
+// 🚀 INIT
+(async function init() {
+  await seedFromAPI();
+  renderProducts();
+  renderCategories();
+  updateDashboard();
+})();
