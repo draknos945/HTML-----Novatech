@@ -17,6 +17,7 @@ const productList = document.getElementById("productList");
 const searchInput = document.getElementById("searchInput");
 const categoryForm = document.getElementById("categoryForm");
 const categoryList = document.getElementById("categoryList");
+const apiProductList = document.getElementById("apiProductList");
 
 function saveProducts() {
   localStorage.setItem("products", JSON.stringify(products));
@@ -27,36 +28,90 @@ function saveCategories() {
 }
 
 
-async function seedFromAPI() {
-  if (products.length > 0) return;
 
+async function loadAPIStore() {
   try {
     const res = await fetch("https://fakestoreapi.com/products");
     const data = await res.json();
-
-    const generatedCategories = new Set();
-
-    products = data.map(p => {
-      const stock = Math.floor(Math.random() * 20) + 1;
-      const cat = p.category.charAt(0).toUpperCase() + p.category.slice(1);
-      generatedCategories.add(cat);
-
-      return {
-        name: p.title,
-        price: p.price,
-        stock: stock,
-        category: cat
-      };
-    });
-
-    categories = [...generatedCategories];
-
-    saveProducts();
-    saveCategories();
+    renderAPIProducts(data);
   } catch (err) {
     console.error("API Error:", err);
   }
 }
+
+function renderAPIProducts(apiProducts) {
+  if (!apiProductList) return;
+
+  apiProductList.innerHTML = "";
+
+  apiProducts.forEach(p => {
+    const li = document.createElement("li");
+
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.textContent = "Import";
+    btn.addEventListener("click", () => importProduct(p));
+
+    li.innerHTML = `
+      <div style="display:flex; gap:15px; align-items:center;">
+        <img src="${p.image}" style="width:60px; height:60px; object-fit:contain; background:#fff; padding:5px; border-radius:8px;">
+        <div class="product-info">
+          <strong>${p.title}</strong>
+          <div>
+            <span class="price">$${p.price}</span> • ${p.category}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    actions.appendChild(btn);
+
+    li.appendChild(actions);
+    apiProductList.appendChild(li);
+  });
+}
+
+
+function importProduct(p) {
+  let qty = prompt("Enter quantity to import:");
+  if (qty === null) return;
+
+  qty = Number(qty);
+  if (isNaN(qty) || qty <= 0) {
+    alert("Please enter a valid quantity.");
+    return;
+  }
+
+  const cleanCategory =
+    p.category.charAt(0).toUpperCase() + p.category.slice(1).toLowerCase();
+
+  const newProduct = {
+    name: p.title,
+    price: p.price,
+    stock: qty,
+    category: cleanCategory
+  };
+
+  products.push(newProduct);
+
+  if (!categories.includes(cleanCategory)) {
+    categories.push(cleanCategory);
+    saveCategories();
+  }
+
+  saveProducts();
+  renderProducts();
+  renderCategories();
+  updateDashboard();
+
+  alert("Product imported!");
+}
+
+
+
+
 
 function renderProducts(filtered = products) {
   productList.innerHTML = "";
@@ -140,34 +195,7 @@ searchInput.addEventListener("input", function() {
   renderProducts(filtered);
 });
 
-let nameAsc = true;
-let priceAsc = true;
 
-function sortByName(btn) {
-  if (nameAsc) {
-    products.sort((a, b) => a.name.localeCompare(b.name));
-    btn.innerText = "Sort Z → A";
-  } else {
-    products.sort((a, b) => b.name.localeCompare(a.name));
-    btn.innerText = "Sort A → Z";
-  }
-
-  nameAsc = !nameAsc;
-  renderProducts();
-}
-
-function sortByPrice(btn) {
-  if (priceAsc) {
-    products.sort((a, b) => a.price - b.price);
-    btn.innerText = "Price ↓";
-  } else {
-    products.sort((a, b) => b.price - a.price);
-    btn.innerText = "Price ↑";
-  }
-
-  priceAsc = !priceAsc;
-  renderProducts();
-}
 
 function renderCategories() {
   categoryList.innerHTML = "";
@@ -203,22 +231,26 @@ function renderCategories() {
 }
 
 function deleteCategory(index) {
-  if (!confirm("Delete this category?")) return;
+  if (!confirm("Delete this category and all its products?")) return;
+
+  const removedCategory = categories[index];
+
+ 
   categories.splice(index, 1);
+
+
+  products = products.filter(p => p.category !== removedCategory);
+
   saveCategories();
+  saveProducts();
+
   renderCategories();
+  renderProducts();
   updateDashboard();
 }
 
-categoryForm.addEventListener("submit", function(e) {
-  e.preventDefault();
-  const name = document.getElementById("categoryName").value;
-  categories.push(name);
-  saveCategories();
-  renderCategories();
-  updateDashboard();
-  categoryForm.reset();
-});
+
+
 
 let stockChart = null;
 
@@ -262,21 +294,8 @@ function updateChart() {
       labels: labels,
       datasets: [{
         label: "Stock",
-        data: data,
-        backgroundColor: "#3b82f6"
+        data: data
       }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          labels: { color: "#cbd5f5" }
-        }
-      },
-      scales: {
-        x: { ticks: { color: "#94a3b8" } },
-        y: { ticks: { color: "#94a3b8" } }
-      }
     }
   });
 }
@@ -292,10 +311,56 @@ function filterByCategory() {
   }
 }
 
-// 🚀 INIT
+
+
 (async function init() {
-  await seedFromAPI();
+  await loadAPIStore();
   renderProducts();
   renderCategories();
   updateDashboard();
 })();
+
+let nameAsc = true;
+let priceAsc = true;
+
+function sortByName(btn) {
+  if (nameAsc) {
+    products.sort((a, b) => a.name.localeCompare(b.name));
+    btn.innerText = "Z → A";
+  } else {
+    products.sort((a, b) => b.name.localeCompare(a.name));
+    btn.innerText = "A → Z";
+  }
+
+  nameAsc = !nameAsc;
+  renderProducts();
+}
+
+function sortByPrice(btn) {
+  if (priceAsc) {
+    products.sort((a, b) => a.price - b.price);
+    btn.innerText = "Price ↓";
+  } else {
+    products.sort((a, b) => b.price - a.price);
+    btn.innerText = "Price ↑";
+  }
+
+  priceAsc = !priceAsc;
+  renderProducts();
+}
+
+
+ let stockAsc = true;
+
+function sortByStock(btn) {
+  if (stockAsc) {
+    products.sort((a, b) => a.stock - b.stock);
+    btn.innerText = "Stock ↓";
+  } else {
+    products.sort((a, b) => b.stock - a.stock);
+    btn.innerText = "Stock ↑";
+  }
+
+  stockAsc = !stockAsc;
+  renderProducts();
+}
