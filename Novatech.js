@@ -1,4 +1,4 @@
-// ---------------- SPA NAV ----------------
+
 function showSection(sectionId, el) {
   document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
   document.getElementById(sectionId).classList.add('active');
@@ -9,7 +9,7 @@ function showSection(sectionId, el) {
   if (el) el.classList.add('active-nav');
 }
 
-// ---------------- PRODUCTS ----------------
+
 let products = JSON.parse(localStorage.getItem("products")) || [];
 let editIndex = null;
 
@@ -99,7 +99,7 @@ productForm.addEventListener("submit", function(e) {
   productForm.reset();
 });
 
-// ---------------- SEARCH ----------------
+
 searchInput.addEventListener("input", function() {
   const value = this.value.toLowerCase();
   const filtered = products.filter(p =>
@@ -108,7 +108,7 @@ searchInput.addEventListener("input", function() {
   renderProducts(filtered);
 });
 
-// ---------------- SORT ----------------
+
 let nameAsc = true;
 let priceAsc = true;
 
@@ -138,7 +138,7 @@ function sortByPrice(btn) {
   renderProducts();
 }
 
-// ---------------- CATEGORIES ----------------
+
 let categories = JSON.parse(localStorage.getItem("categories")) || [];
 
 const categoryForm = document.getElementById("categoryForm");
@@ -199,7 +199,7 @@ categoryForm.addEventListener("submit", function(e) {
   categoryForm.reset();
 });
 
-// ---------------- DASHBOARD ----------------
+
 let stockChart = null;
 
 function updateDashboard() {
@@ -214,7 +214,7 @@ function updateDashboard() {
   updateChart();
 }
 
-// ---------------- CHART ----------------
+
 function updateChart() {
   const canvas = document.getElementById("stockChart");
   if (!canvas) return;
@@ -262,7 +262,7 @@ function updateChart() {
   });
 }
 
-// ---------------- FILTER ----------------
+
 function filterByCategory() {
   const selected = document.getElementById("filterCategory").value;
 
@@ -274,7 +274,7 @@ function filterByCategory() {
   }
 }
 
-// ---------------- INITIAL LOAD ----------------
+
 renderProducts();
 renderCategories();
 updateDashboard();

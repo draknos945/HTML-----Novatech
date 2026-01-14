@@ -12,7 +12,7 @@ body {
   color: #e5e7eb;
 }
 
-/* SIDEBAR */
+
 .leftbar {
   width: 240px;
   background: linear-gradient(180deg, #020617, #020617);
@@ -59,7 +59,7 @@ body {
   color: #fff;
 }
 
-/* MAIN */
+
 .main {
   flex: 1;
   display: flex;
@@ -75,7 +75,7 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
 }
 
-/* SECTIONS */
+
 .section {
   display: none;
   padding: 25px;
@@ -92,7 +92,7 @@ body {
   margin-bottom: 15px;
 }
 
-/* DASHBOARD */
+
 .dashboard {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -100,7 +100,7 @@ body {
   margin-bottom: 20px;
 }
 
-/* CARDS */
+
 .card {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
   border-radius: 18px;
@@ -120,7 +120,7 @@ body {
   color: #60a5fa;
 }
 
-/* FORMS */
+
 .form-row {
   display: flex;
   gap: 10px;
@@ -147,7 +147,7 @@ input:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(96,165,250,0.2);
 }
 
-/* BUTTONS */
+
 button {
   padding: 11px 18px;
   border-radius: 12px;
@@ -180,7 +180,7 @@ button {
   color: #60a5fa;
 }
 
-/* TOOLBAR */
+
 .toolbar {
   display: flex;
   gap: 10px;
@@ -188,7 +188,7 @@ button {
   margin-bottom: 15px;
 }
 
-/* LIST */
+
 .list {
   list-style: none;
   margin-top: 15px;
@@ -210,20 +210,20 @@ button {
   transform: translateY(-2px);
 }
 
-/* PRODUCT INFO */
+
 .product-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-/* PRICE */
+
 .price {
   font-weight: 700;
   color: #4ade80;
 }
 
-/* STOCK BADGES */
+
 .stock-badge {
   padding: 4px 10px;
   border-radius: 999px;
@@ -241,7 +241,7 @@ button {
   color: #ef4444;
 }
 
-/* ACTION BUTTONS */
+
 .actions {
   display: flex;
   gap: 10px;
@@ -271,7 +271,7 @@ button {
   color: #ef4444;
 }
 
-/* SCROLLBAR */
+
 .section::-webkit-scrollbar {
   width: 8px;
 }
