@@ -10,12 +10,18 @@ function showSection(sectionId, el) {
 
 let products = JSON.parse(localStorage.getItem("products")) || [];
 let categories = JSON.parse(localStorage.getItem("categories")) || [];
-let editIndex = null;
+let editId = null;
+
+
+products = products.map(p => {
+  if (!p.id) return { ...p, id: Date.now() + Math.random() };
+  return p;
+});
+localStorage.setItem("products", JSON.stringify(products));
 
 const productForm = document.getElementById("productForm");
 const productList = document.getElementById("productList");
 const searchInput = document.getElementById("searchInput");
-const categoryForm = document.getElementById("categoryForm");
 const categoryList = document.getElementById("categoryList");
 const apiProductList = document.getElementById("apiProductList");
 
@@ -26,7 +32,6 @@ function saveProducts() {
 function saveCategories() {
   localStorage.setItem("categories", JSON.stringify(categories));
 }
-
 
 
 async function loadAPIStore() {
@@ -41,7 +46,6 @@ async function loadAPIStore() {
 
 function renderAPIProducts(apiProducts) {
   if (!apiProductList) return;
-
   apiProductList.innerHTML = "";
 
   apiProducts.forEach(p => {
@@ -73,7 +77,6 @@ function renderAPIProducts(apiProducts) {
   });
 }
 
-
 function importProduct(p) {
   let qty = prompt("Enter quantity to import:");
   if (qty === null) return;
@@ -88,6 +91,7 @@ function importProduct(p) {
     p.category.charAt(0).toUpperCase() + p.category.slice(1).toLowerCase();
 
   const newProduct = {
+    id: Date.now(),
     name: p.title,
     price: p.price,
     stock: qty,
@@ -111,12 +115,10 @@ function importProduct(p) {
 
 
 
-
-
 function renderProducts(filtered = products) {
   productList.innerHTML = "";
 
-  filtered.forEach((p, index) => {
+  filtered.forEach((p) => {
     const li = document.createElement("li");
 
     let stockClass = p.stock <= 3 ? "stock-low" : "stock-ok";
@@ -133,8 +135,8 @@ function renderProducts(filtered = products) {
       </div>
 
       <div class="actions">
-        <button class="action-btn" onclick="editProduct(${index})">✎</button>
-        <button class="action-btn action-delete" onclick="confirmDelete(${index})">⌫</button>
+        <button class="action-btn" onclick="editProductById(${p.id})">✎</button>
+        <button class="action-btn action-delete" onclick="confirmDeleteById(${p.id})">⌫</button>
       </div>
     `;
 
@@ -142,27 +144,29 @@ function renderProducts(filtered = products) {
   });
 }
 
-function deleteProduct(index) {
-  products.splice(index, 1);
+function editProductById(id) {
+  const index = products.findIndex(p => p.id === id);
+  if (index === -1) return;
+
+  const p = products[index];
+
+  document.getElementById("name").value = p.name;
+  document.getElementById("price").value = p.price;
+  document.getElementById("stock").value = p.stock;
+  document.getElementById("categorySelect").value = p.category;
+
+  editId = id;
+}
+
+function confirmDeleteById(id) {
+  if (!confirm("Delete this product?")) return;
+  products = products.filter(p => p.id !== id);
   saveProducts();
   renderProducts();
   updateDashboard();
 }
 
-function confirmDelete(index) {
-  if (confirm("Delete this product?")) {
-    deleteProduct(index);
-  }
-}
 
-function editProduct(index) {
-  const p = products[index];
-  document.getElementById("name").value = p.name;
-  document.getElementById("price").value = p.price;
-  document.getElementById("stock").value = p.stock;
-  document.getElementById("categorySelect").value = p.category;
-  editIndex = index;
-}
 
 productForm.addEventListener("submit", function(e) {
   e.preventDefault();
@@ -172,13 +176,20 @@ productForm.addEventListener("submit", function(e) {
   const stock = document.getElementById("stock").value;
   const category = document.getElementById("categorySelect").value;
 
-  const product = { name, price, stock, category };
-
-  if (editIndex === null) {
-    products.push(product);
+  if (editId === null) {
+    products.push({
+      id: Date.now(),
+      name,
+      price,
+      stock,
+      category
+    });
   } else {
-    products[editIndex] = product;
-    editIndex = null;
+    const index = products.findIndex(p => p.id === editId);
+    if (index !== -1) {
+      products[index] = { id: editId, name, price, stock, category };
+    }
+    editId = null;
   }
 
   saveProducts();
@@ -186,6 +197,8 @@ productForm.addEventListener("submit", function(e) {
   updateDashboard();
   productForm.reset();
 });
+
+
 
 searchInput.addEventListener("input", function() {
   const value = this.value.toLowerCase();
@@ -234,21 +247,15 @@ function deleteCategory(index) {
   if (!confirm("Delete this category and all its products?")) return;
 
   const removedCategory = categories[index];
-
- 
   categories.splice(index, 1);
-
-
   products = products.filter(p => p.category !== removedCategory);
 
   saveCategories();
   saveProducts();
-
   renderCategories();
   renderProducts();
   updateDashboard();
 }
-
 
 
 
@@ -284,21 +291,21 @@ function updateChart() {
   const labels = Object.keys(categoryTotals);
   const data = Object.values(categoryTotals);
 
-  if (stockChart) {
-    stockChart.destroy();
-  }
+  if (stockChart) stockChart.destroy();
 
   stockChart = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: labels,
+      labels,
       datasets: [{
         label: "Stock",
-        data: data
+        data
       }]
     }
   });
 }
+
+
 
 function filterByCategory() {
   const selected = document.getElementById("filterCategory").value;
@@ -312,6 +319,38 @@ function filterByCategory() {
 }
 
 
+let nameAsc = true;
+let priceAsc = true;
+let stockAsc = true;
+
+function sortByName(btn) {
+  products.sort((a, b) =>
+    nameAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+  );
+  nameAsc = !nameAsc;
+  btn.innerText = nameAsc ? "A → Z" : "Z → A";
+  renderProducts();
+}
+
+function sortByPrice(btn) {
+  products.sort((a, b) =>
+    priceAsc ? a.price - b.price : b.price - a.price
+  );
+  priceAsc = !priceAsc;
+  btn.innerText = priceAsc ? "Price ↑" : "Price ↓";
+  renderProducts();
+}
+
+function sortByStock(btn) {
+  products.sort((a, b) =>
+    stockAsc ? a.stock - b.stock : b.stock - a.stock
+  );
+  stockAsc = !stockAsc;
+  btn.innerText = stockAsc ? "Stock ↑" : "Stock ↓";
+  renderProducts();
+}
+
+
 
 (async function init() {
   await loadAPIStore();
@@ -320,47 +359,25 @@ function filterByCategory() {
   updateDashboard();
 })();
 
-let nameAsc = true;
-let priceAsc = true;
+const categoryForm = document.getElementById("categoryForm");
 
-function sortByName(btn) {
-  if (nameAsc) {
-    products.sort((a, b) => a.name.localeCompare(b.name));
-    btn.innerText = "Z → A";
-  } else {
-    products.sort((a, b) => b.name.localeCompare(a.name));
-    btn.innerText = "A → Z";
+categoryForm.addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const input = document.getElementById("categoryName");
+  const name = input.value.trim();
+
+  if (!name) return;
+
+  if (categories.includes(name)) {
+    alert("Category already exists!");
+    return;
   }
 
-  nameAsc = !nameAsc;
-  renderProducts();
-}
+  categories.push(name);
+  saveCategories();
+  renderCategories();
+  updateDashboard();
 
-function sortByPrice(btn) {
-  if (priceAsc) {
-    products.sort((a, b) => a.price - b.price);
-    btn.innerText = "Price ↓";
-  } else {
-    products.sort((a, b) => b.price - a.price);
-    btn.innerText = "Price ↑";
-  }
-
-  priceAsc = !priceAsc;
-  renderProducts();
-}
-
-
- let stockAsc = true;
-
-function sortByStock(btn) {
-  if (stockAsc) {
-    products.sort((a, b) => a.stock - b.stock);
-    btn.innerText = "Stock ↓";
-  } else {
-    products.sort((a, b) => b.stock - a.stock);
-    btn.innerText = "Stock ↑";
-  }
-
-  stockAsc = !stockAsc;
-  renderProducts();
-}
+  input.value = "";
+});
